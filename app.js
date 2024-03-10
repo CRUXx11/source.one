@@ -21,7 +21,8 @@ const bookstoreSchema= new mongoose.Schema({
         author_name: String,
         book_name: String,
         lend_date: Date,
-        days_to_return: Number
+        days_to_return: Number,
+        book_type:String
     }]
 });
 
@@ -149,9 +150,15 @@ app.post("/charges", async (req, res) => {
         // difference to days
         const daysDifference = Math.ceil(timeDifference / (1000 * 3600 * 24));
 
-        console.log("Number of days:", daysDifference);
+        let totalCharges = 0;
+        let rentChargesPerDay = 1;
+        if(bookDetails.book_type === 'Regular' || bookDetails.book_type === 'Novel'){
+            rentChargesPerDay = 1.5;
+        }else{
+            rentChargesPerDay = 3;
+        }
 
-        res.send(`Charges are ${daysDifference * 1}`);
+        res.send(`Charges are ${daysDifference * rentChargesPerDay}`);
     } catch (error) {
         res.status(500).send("Internal Server Error");
     }
