@@ -1,5 +1,5 @@
 {
-  "name": "task-shreyash",
+  "name": "source-one",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -11,6 +11,8 @@
   "license": "ISC",
   "dependencies": {
     "dotenv": "^16.4.5",
+    "ejs": "^3.1.9",
+    "ejs-mate": "^4.0.0",
     "express": "^4.18.3",
     "mongodb": "^6.4.0",
     "mongoose": "^8.2.1",

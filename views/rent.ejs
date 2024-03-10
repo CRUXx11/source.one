@@ -1,0 +1,53 @@
+<% layout("/layouts/boilerplate") %><br/>
+
+<style>
+    .container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+    .input-group-text{
+        width: 40%;
+    }
+    .card {
+        width: 25rem;
+        border-radius: 15px;
+        background-color: #f8f9fa;
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: box-shadow 0.3s ease;
+    }
+    .card:hover {
+        box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+    }
+</style>
+<div class="card-body col-6 mt-3">
+    <form action="/charges" method="post">
+        <div class="container">
+            <div class="card">
+                <div class="card-body">
+                    <div class="input-group mb-3">
+                        <label for="username" class="input-group-text">Username</label>
+                        <input type="text" id="username" class="form-control" disabled value="<%= customerDetails.customer_name%>" name="username">
+                    </div>
+                    <div class="input-group mb-3">
+                        <label for="bookname" class="input-group-text">Bookname</label>
+                        <input type="text" id="bookname" class="form-control" disabled value="<%= customerDetails.bookDetails.book_name%>" name="bookname">
+                    </div>
+                    <div class="input-group mb-3">
+                        <label for="days_to_return" class="input-group-text">Days to Return</label>
+                        <input type="text" id="days_to_return" class="form-control" disabled value="<%= customerDetails.bookDetails.days_to_return%>" name="days_to_return">
+                    </div>
+                    <div class="input-group mb-3">
+                        <label for="date" class="input-group-text">Return Date</label>
+                        <input type="date" id="date" class="form-control" name="date" min="<%= customerDetails.formattedLendDate%>" max="<%= date%>" value="<%= customerDetails.formattedLendDate %>">
+                    </div>
+                    <input type="hidden" name="bookDetails" value="<%= JSON.stringify(customerDetails.bookDetails) %>">
+                    <button type="submit" class="btn btn-primary">Calculate Rental Charges</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+

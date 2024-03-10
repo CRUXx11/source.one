@@ -1,11 +1,17 @@
 const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
+const path = require("path");
+const ejsMate = require("ejs-mate");
 require('dotenv').config();
 
 
 app.use(express.urlencoded({extended:true}));
-
+app.set("view engine","ejs");
+app.set('views', path.join(__dirname, 'views'));
+app.use(express.urlencoded({extended:true}));
+app.engine('ejs', ejsMate);
+app.use(express.static(path.join(__dirname,"/public")));
 // schema 
 const bookstoreSchema= new mongoose.Schema({
     customer_id: Number,
@@ -19,7 +25,7 @@ const bookstoreSchema= new mongoose.Schema({
     }]
 });
 
-// Define a model based on the schema
+// model
 const Bookstore = mongoose.model('bookstore', bookstoreSchema,'bookstore');
 
 mongoose.connect(process.env.MONGODB_URI)
@@ -31,31 +37,122 @@ app.listen(8080, () => {
     console.log("Listening to port 8080");
 });
 
-app.get("/:bookname", async (req, res) => {
+app.get("/available",async (req,res)=>{
+    res.render("availability.ejs");
+})
+app.get("/returnBook",async (req,res)=>{
+    res.render("returnBook.ejs");
+})
+
+app.post("/bookname", async (req, res) => {
     try {
-        const { bookname } = req.params;
-        const book = await Bookstore.findOne({ "books.book_name": bookname }, { "books.$": 1 });
-        let daysToReturn = book.books[0].days_to_return;
-        let lendDate = book.books[0].lend_date;
+        const bookname = req.body.bookname;
+        const customers = await Bookstore.find({ "books.book_name": bookname });
+        
+        if (customers.length === 0) {
+            res.status(404).send("Book not found");
+            return;
+        }
+        
+        let maxReturnDate = new Date(0);
 
-        const returnDate = new Date(lendDate.getTime() + (daysToReturn * 24 * 60 * 60 * 1000) +1);
-        const formattedReturnDate = returnDate.toLocaleDateString('en-US', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
+        customers.forEach(customer => {
+            const matchedBook = customer.books.find(b => b.book_name === bookname);
+            const daysToReturn = matchedBook.days_to_return;
+            const lendDate = new Date(matchedBook.lend_date);
+            const returnDate = new Date(lendDate.getTime() + (daysToReturn * 24 * 60 * 60 * 1000) + 1);
+            
+            if (returnDate > maxReturnDate) {
+                maxReturnDate = returnDate;
+            }
         });
-        console.log(book.books);
 
-        if (book) {
-            res.send(`The book will be available on : ${formattedReturnDate}`);
+        if (maxReturnDate > new Date(0)) {
+            const formattedReturnDate = maxReturnDate.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            res.send(`The Book <b>${bookname}</b> will be available by : <b>${formattedReturnDate}</b>`);
         } else {
             res.status(404).send("Book not found");
         }
     } catch (error) {
-        console.error(error);
         res.status(500).send("Internal Server Error");
     }
 });
 
 
+app.post("/rent", async (req, res) => {
+    try {
+        let username = req.body.username;
+        let bookname = req.body.bookname;
+
+       // Check if customer is a number (assuming ID)
+       if (!isNaN(username)) {
+        username = await Bookstore.findOne({ "customer_id": parseInt(username) });
+    } else {
+        // If not a number, treat it as a name
+        username = await Bookstore.findOne({ "customer_name": username });
+    }
+   let bookDetails = username.books.find(book=> book.book_name==bookname);
+   let returnDate = bookDetails.lend_date;
+
+ const customers = await Bookstore.find({ "books.book_name": bookname });
+ let customerDetails = {};
+ let maxReturnDate = new Date(0);
+
+        customers.forEach(customer => {
+            const matchedBook = customer.books.find(b => b.book_name === bookname);
+            const daysToReturn = matchedBook.days_to_return;
+            const lendDate = new Date(matchedBook.lend_date);
+            const returnDate = new Date(lendDate.getTime() + (daysToReturn * 24 * 60 * 60 * 1000) + 1);
+            formattedLendDate = matchedBook.lend_date.toISOString().split('T')[0];
+            if (returnDate > maxReturnDate) {
+                maxReturnDate = returnDate;
+                customerDetails = {
+                    customer_id:customer.customer_id,
+                    customer_name:customer.customer_name,
+                    formattedLendDate:formattedLendDate,
+                    bookDetails:matchedBook
+                }
+            }
+        });
+
+      
+          
+            let date = maxReturnDate.toISOString().split('T')[0];
+            console.log(customerDetails,"sjsj",maxReturnDate.toISOString().split('T')[0])
+            res.render(`rent.ejs`,{customerDetails,date});
+      
+        
+    } catch (error) {
+        res.status(500).send("Internal Server Error");
+    }
+});
+
+app.post("/charges", async (req, res) => {
+    try {
+        let username = req.body.username;
+        let bookname = req.body.bookname;
+        let bookDetails = JSON.parse(req.body.bookDetails);
+        let returnDate = req.body.date;
+
+        const daysToReturn = bookDetails.days_to_return;
+        const lendDate = new Date(bookDetails.lend_date);
+        const returnDateObj = new Date(returnDate);
+
+        //  difference in milliseconds
+        const timeDifference = returnDateObj.getTime() - lendDate.getTime();
+
+        // difference to days
+        const daysDifference = Math.ceil(timeDifference / (1000 * 3600 * 24));
+
+        console.log("Number of days:", daysDifference);
+
+        res.send(`Charges are ${daysDifference * 1}`);
+    } catch (error) {
+        res.status(500).send("Internal Server Error");
+    }
+});
