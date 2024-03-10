@@ -27,12 +27,13 @@ mongoose.connect(process.env.MONGODB_URI)
    })
     .catch(err => console.error('Error connecting to MongoDB Atlas', err));
 
-app.listen(8080, () => {
-    console.log("Listening to port 8080");
+app.listen(8081, () => {
+    console.log("Listening to port 8081");
 });
 
-app.get("/:bookname", async (req, res) => {
+app.get("/book/:bookname", async (req, res) => {
     try {
+        console.log("entered bookname");
         const { bookname } = req.params;
         const book = await Bookstore.findOne({ "books.book_name": bookname }, { "books.$": 1 });
         let daysToReturn = book.books[0].days_to_return;
@@ -48,7 +49,7 @@ app.get("/:bookname", async (req, res) => {
         console.log(book.books);
 
         if (book) {
-            res.send(`The book will be available on : ${formattedReturnDate}`);
+            res.send(`The book will be available on : <b>${formattedReturnDate}</b>`);
         } else {
             res.status(404).send("Book not found");
         }
@@ -58,4 +59,30 @@ app.get("/:bookname", async (req, res) => {
     }
 });
 
+// cost if he returns indiviual books
+app.get("/rent/:customer/:bookname", async (req, res) => {
+    try {
+        console.log("entered rent");
+        let { customer,bookname } = req.params;
 
+        // Check if customer is a number (assuming ID)
+        if (!isNaN(customer)) {
+            customer = await Bookstore.findOne({ "customer_id": parseInt(customer) });
+        } else {
+            // If not a number, treat it as a name
+            customer = await Bookstore.findOne({ "customer_name": customer });
+        }
+       let bookDetails = customer.books.find(book=> book.book_name==bookname)
+       let rentalChargePerDay = 1;
+       const daysToReturn = bookDetails.days_to_return;
+        let totalPrice = rentalChargePerDay * daysToReturn;
+
+        if (customer) {
+            res.send(`Total Rental Cost for <b>${customer.customer_name}</b> for the Book: <b>${bookDetails.book_name}</b> is <b> ${totalPrice} Rs</b>`);
+        } else {
+            res.status(404).send("customer not found");
+        }
+    } catch (error) {
+        res.status(500).send("Internal Server Error");
+    }
+});
