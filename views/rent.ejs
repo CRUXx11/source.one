@@ -30,10 +30,12 @@
                     <div class="input-group mb-3">
                         <label for="username" class="input-group-text">Username</label>
                         <input type="text" id="username" class="form-control" disabled value="<%= customerDetails.customer_name%>" name="username">
+                        <input type="hidden" name="username" value="<%= customerDetails.customer_name%>">
                     </div>
                     <div class="input-group mb-3">
                         <label for="bookname" class="input-group-text">Bookname</label>
                         <input type="text" id="bookname" class="form-control" disabled value="<%= customerDetails.bookDetails.book_name%>" name="bookname">
+                        <input type="hidden" name="bookname" value="<%= customerDetails.bookDetails.book_name%>">
                     </div>
                     <div class="input-group mb-3">
                         <label for="days_to_return" class="input-group-text">Days to Return</label>

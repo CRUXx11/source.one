@@ -140,7 +140,6 @@ app.post("/charges", async (req, res) => {
         let bookDetails = JSON.parse(req.body.bookDetails);
         let returnDate = req.body.date;
 
-        const daysToReturn = bookDetails.days_to_return;
         const lendDate = new Date(bookDetails.lend_date);
         const returnDateObj = new Date(returnDate);
 
@@ -151,14 +150,23 @@ app.post("/charges", async (req, res) => {
         const daysDifference = Math.ceil(timeDifference / (1000 * 3600 * 24));
 
         let totalCharges = 0;
-        let rentChargesPerDay = 1;
-        if(bookDetails.book_type === 'Regular' || bookDetails.book_type === 'Novel'){
-            rentChargesPerDay = 1.5;
-        }else{
-            rentChargesPerDay = 3;
+       if(bookDetails.book_type == "Regular"){
+        totalCharges = 2;
+        if(daysDifference>2){
+            totalCharges += 1.5 * (daysDifference - 2);
         }
+  
+       }else if(bookDetails.book_type == "Novel"){
+        totalCharges = 4.5 ;
+        if(daysDifference>3){
+        totalCharges += 1.5 * (daysDifference - 3)
+        }
+       }  else{
+        totalCharges += 3 * daysDifference ;
+       }
+  
 
-        res.send(`Charges are ${daysDifference * rentChargesPerDay}`);
+        res.send(`Total Charges for <b>${username}</b> for the book <b>${bookname}</b> are ${totalCharges}`);
     } catch (error) {
         res.status(500).send("Internal Server Error");
     }
