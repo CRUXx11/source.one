@@ -15,7 +15,8 @@ const bookstoreSchema= new mongoose.Schema({
         author_name: String,
         book_name: String,
         lend_date: Date,
-        days_to_return: Number
+        days_to_return: Number,
+        book_type:String
     }]
 });
 
@@ -60,10 +61,10 @@ app.get("/book/:bookname", async (req, res) => {
 });
 
 // cost if he returns indiviual books
-app.get("/rent/:customer/:bookname", async (req, res) => {
+app.get("/rent/:customer/:bookname/:day", async (req, res) => {
     try {
         console.log("entered rent");
-        let { customer,bookname } = req.params;
+        let { customer,bookname,day } = req.params;
 
         // Check if customer is a number (assuming ID)
         if (!isNaN(customer)) {
@@ -73,17 +74,23 @@ app.get("/rent/:customer/:bookname", async (req, res) => {
             customer = await Bookstore.findOne({ "customer_name": customer });
         }
        let bookDetails = customer.books.find(book=> book.book_name==bookname);
-       let rentalChargePerDay = 1;
-       if(bookDetails.book_type == "Regular" || bookDetails.book_type == "Novel"){
-rentalChargePerDay = 1.5;
-       }else{
-        rentalChargePerDay = 3;
+       let totalPrice = 0;
+       if(bookDetails.book_type == "Regular"){
+        totalPrice = 2;
+        if(day>2){
+            totalPrice += 1.5 * (day - 2);
+        }
+  
+       }else if(bookDetails.book_type == "Novel"){
+        totalPrice = 4.5 ;
+        totalPrice += 1.5 * (day - 3)
+       }  else{
+        totalPrice += 3 * day ;
        }
-       const daysToReturn = bookDetails.days_to_return;
-        let totalPrice = rentalChargePerDay * daysToReturn;
+  
 
         if (customer) {
-            res.send(`Total Rental Cost for <b>${customer.customer_name}</b> for the Book: <b>${bookDetails.book_name}</b> is <b> ${totalPrice} Rs</b>`);
+            res.send(`Total Rental Cost for <b>${customer.customer_name}</b> for the ${bookDetails.book_type} Book: <b>${bookDetails.book_name}</b> is <b> ${totalPrice} Rs</b>`);
         } else {
             res.status(404).send("customer not found");
         }
@@ -92,22 +99,3 @@ rentalChargePerDay = 1.5;
     }
 });
 
-app.get("/getAll", async (req, res) => {
-    try {
-        console.log("entered bookname");
-        const { bookname } = req.params;
-
-const uniqueAuthors = await Bookstore.distinct("books.author_name");
-
-console.log(uniqueAuthors);
-
-        if (book) {
-            res.send(`The book will be available on : <b></b>`);
-        } else {
-            res.status(404).send("Book not found");
-        }
-    } catch (error) {
-        console.error(error);
-        res.status(500).send("Internal Server Error");
-    }
-});
