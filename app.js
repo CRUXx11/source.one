@@ -72,8 +72,13 @@ app.get("/rent/:customer/:bookname", async (req, res) => {
             // If not a number, treat it as a name
             customer = await Bookstore.findOne({ "customer_name": customer });
         }
-       let bookDetails = customer.books.find(book=> book.book_name==bookname)
+       let bookDetails = customer.books.find(book=> book.book_name==bookname);
        let rentalChargePerDay = 1;
+       if(bookDetails.book_type == "Regular" || bookDetails.book_type == "Novel"){
+rentalChargePerDay = 1.5;
+       }else{
+        rentalChargePerDay = 3;
+       }
        const daysToReturn = bookDetails.days_to_return;
         let totalPrice = rentalChargePerDay * daysToReturn;
 
@@ -83,6 +88,26 @@ app.get("/rent/:customer/:bookname", async (req, res) => {
             res.status(404).send("customer not found");
         }
     } catch (error) {
+        res.status(500).send("Internal Server Error");
+    }
+});
+
+app.get("/getAll", async (req, res) => {
+    try {
+        console.log("entered bookname");
+        const { bookname } = req.params;
+
+const uniqueAuthors = await Bookstore.distinct("books.author_name");
+
+console.log(uniqueAuthors);
+
+        if (book) {
+            res.send(`The book will be available on : <b></b>`);
+        } else {
+            res.status(404).send("Book not found");
+        }
+    } catch (error) {
+        console.error(error);
         res.status(500).send("Internal Server Error");
     }
 });
