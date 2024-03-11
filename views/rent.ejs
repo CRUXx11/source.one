@@ -43,7 +43,7 @@
                     </div>
                     <div class="input-group mb-3">
                         <label for="date" class="input-group-text">Return Date</label>
-                        <input type="date" id="date" class="form-control" name="date" min="<%= customerDetails.formattedLendDate%>" max="<%= date%>" value="<%= customerDetails.formattedLendDate %>">
+                        <input type="date" id="date" class="form-control" name="date" min="<%= customerDetails.formattedLendDate%>" max="<%= customerDetails.formattedReturnDate%>" value="<%= customerDetails.formattedLendDate %>">
                     </div>
                     <input type="hidden" name="bookDetails" value="<%= JSON.stringify(customerDetails.bookDetails) %>">
                     <button type="submit" class="btn btn-primary">Calculate Rental Charges</button>

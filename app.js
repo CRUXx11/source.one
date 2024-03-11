@@ -96,42 +96,32 @@ app.post("/rent", async (req, res) => {
         let username = req.body.username;
         let bookname = req.body.bookname;
 
-       // Check if customer is a number (assuming ID)
-       if (!isNaN(username)) {
-        username = await Bookstore.findOne({ "customer_id": parseInt(username) });
-    } else {
-        // If not a number, treat it as a name
+        if (Object.keys(req.body).length === 0) {
+            throw new Error("Missing required Info");
+        }
+
         username = await Bookstore.findOne({ "customer_name": username });
+    if (!username) {
+        res.status(404).send("Customer not found");
+        return;
     }
-   let bookDetails = username.books.find(book=> book.book_name==bookname);
-   let returnDate = bookDetails.lend_date;
 
- const customers = await Bookstore.find({ "books.book_name": bookname });
- let customerDetails = {};
- let maxReturnDate = new Date(0);
-
-        customers.forEach(customer => {
-            const matchedBook = customer.books.find(b => b.book_name === bookname);
-            const daysToReturn = matchedBook.days_to_return;
-            const lendDate = new Date(matchedBook.lend_date);
-            const returnDate = new Date(lendDate.getTime() + (daysToReturn * 24 * 60 * 60 * 1000) + 1);
-            formattedLendDate = matchedBook.lend_date.toISOString().split('T')[0];
-            if (returnDate > maxReturnDate) {
-                maxReturnDate = returnDate;
-                customerDetails = {
-                    customer_id:customer.customer_id,
-                    customer_name:customer.customer_name,
-                    formattedLendDate:formattedLendDate,
-                    bookDetails:matchedBook
-                }
-            }
-        });
-
-      
-          
-            let date = maxReturnDate.toISOString().split('T')[0];
-            console.log(customerDetails,"sjsj",maxReturnDate.toISOString().split('T')[0])
-            res.render(`rent.ejs`,{customerDetails,date});
+     const customer = username.books.find((book)=>book.book_name === bookname ); 
+     if (!customer) {
+        res.status(404).send("Book not found");
+        return;
+    }
+ const lendDate = new Date(customer.lend_date);
+ const maxReturnDate = new Date(lendDate.getTime() + (customer.days_to_return * 24 * 60 * 60 * 1000) + 1);
+ let customerDetails = {
+    customer_id:username.customer_id,
+    customer_name:username.customer_name,
+    formattedLendDate:customer.lend_date.toISOString().split('T')[0],
+    formattedReturnDate:maxReturnDate.toISOString().split('T')[0],
+    bookDetails:customer
+}
+            let date = 
+            res.render(`rent.ejs`,{customerDetails});
       
         
     } catch (error) {
