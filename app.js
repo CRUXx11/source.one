@@ -29,14 +29,16 @@ const bookstoreSchema= new mongoose.Schema({
 // model
 const Bookstore = mongoose.model('bookstore', bookstoreSchema,'bookstore');
 
-mongoose.connect(process.env.MONGODB_URI)
-    .then(() =>  { console.log('Connected to MongoDB Atlas');
-   })
-    .catch(err => console.error('Error connecting to MongoDB Atlas', err));
+if (!module.parent) {
+    mongoose.connect(process.env.MONGODB_URI)
+        .then(() => console.log('Connected to MongoDB Atlas'))
+        .catch(err => console.error('Error connecting to MongoDB Atlas', err));
 
-app.listen(8080, () => {
-    console.log("Listening to port 8080");
-});
+    const PORT = process.env.PORT || 8080;
+    app.listen(PORT, () => {
+        console.log(`Listening to port ${PORT}`);
+    });
+}
 
 app.get("/available",async (req,res)=>{
     res.render("availability.ejs");
@@ -48,6 +50,11 @@ app.get("/returnBook",async (req,res)=>{
 app.post("/bookname", async (req, res) => {
     try {
         const bookname = req.body.bookname;
+        console.log("Received bookname:", bookname); 
+        if (!bookname) {
+            throw new Error("Bookname is missing in request body");
+        }
+      
         const customers = await Bookstore.find({ "books.book_name": bookname });
         
         if (customers.length === 0) {
@@ -56,7 +63,6 @@ app.post("/bookname", async (req, res) => {
         }
         
         let maxReturnDate = new Date(0);
-
         customers.forEach(customer => {
             const matchedBook = customer.books.find(b => b.book_name === bookname);
             const daysToReturn = matchedBook.days_to_return;
@@ -75,7 +81,7 @@ app.post("/bookname", async (req, res) => {
                 month: 'long',
                 day: 'numeric'
             });
-            res.send(`The Book <b>${bookname}</b> will be available by : <b>${formattedReturnDate}</b>`);
+            res.status(200).send(`The Book <b>${bookname}</b> will be available by : <b>${formattedReturnDate}</b>`);
         } else {
             res.status(404).send("Book not found");
         }
@@ -166,8 +172,11 @@ app.post("/charges", async (req, res) => {
        }
   
 
-        res.send(`Total Charges for <b>${username}</b> for the book <b>${bookname}</b> are ${totalCharges}`);
+        res.send(`Total Charges for <b>${username}</b> for the <b>${bookDetails.book_type}</b> book <b>${bookname}</b> are ${totalCharges}`);
     } catch (error) {
         res.status(500).send("Internal Server Error");
     }
 });
+
+
+module.exports = app;
